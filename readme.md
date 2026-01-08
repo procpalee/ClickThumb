@@ -66,23 +66,4 @@
 
 이제 직접 만들어보세요! 여러분의 콘텐츠가 더욱 돋보이게 될 것입니다.
 
----
-
-## 🌐 웹 배포 가이드 (GitHub Pages)
-
-이 프로젝트는 정적 웹사이트(HTML/CSS/JS)이므로 GitHub Pages를 통해 **무료로 웹에 배포**할 수 있습니다.
-
-### 배포 순서
-1. **GitHub 저장소 생성**: GitHub에 로그인 후 `New repository`를 클릭해 새 저장소를 만듭니다.
-2. **코드 업로드**:
-   ```bash
-   git remote add origin https://github.com/[사용자명]/[저장소명].git
-   git branch -M main
-   git push -u origin main
-   ```
-3. **Pages 활성화**:
-   - 저장소의 **Settings** 탭으로 이동
-   - 왼쪽 메뉴에서 **Pages** 클릭
-   - **Build and deployment** > **Branch** 설정에서 `main` 브랜치 선택 후 **Save**
-4. **접속 확인**:
-   - 약 1~5분 후 `https://[사용자명].github.io/[저장소명]/` 주소로 접속하면 웹 앱이 실행됩니다.
+-
