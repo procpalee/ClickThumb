@@ -456,7 +456,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
             <h2 style="margin:0;">Thumbnail Creator</h2>
             <button onclick="toggleHelp()"
-                style="margin:0; padding: 0.5rem 0.8rem; font-size: 0.8rem; background: #2a3b55; height: auto;">사용법</button>
+                style="margin:0; padding: 0.5rem 0.8rem; font-size: 0.8rem; background: #2a3b55; height: auto; white-space: nowrap;">사용법</button>
         </div>
 
         <!-- Content Inputs -->
@@ -553,6 +553,32 @@
 
         <!-- Style Inputs -->
         <div class="input-group">
+            <label>텍스트 색상 (Text Colors)</label>
+            <!-- Row 1: Title & Subtitle -->
+            <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
+                    <label style="font-size: 0.75rem; color: #8d99ae;">제목 (Title)</label>
+                    <input type="color" id="color-text-title" value="#ffffff" style="height: 35px; cursor: pointer;">
+                </div>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
+                    <label style="font-size: 0.75rem; color: #8d99ae;">부제 (Subtitle)</label>
+                    <input type="color" id="color-text-subtitle" value="#e0e0e0" style="height: 35px; cursor: pointer;">
+                </div>
+            </div>
+            <!-- Row 2: Series & Accent -->
+            <div style="display: flex; gap: 10px;">
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
+                    <label style="font-size: 0.75rem; color: #8d99ae;">태그 (Tag)</label>
+                    <input type="color" id="color-text-series" value="#dbeafe" style="height: 35px; cursor: pointer;">
+                </div>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
+                    <label style="font-size: 0.75rem; color: #8d99ae;">강조선 (Line)</label>
+                    <input type="color" id="color-accent" value="#ffffff" style="height: 35px; cursor: pointer;">
+                </div>
+            </div>
+        </div>
+
+        <div class="input-group">
             <label>배경 설정 (Background)</label>
             <div style="display: flex; gap: 10px; margin-bottom: 5px;">
                 <div style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
@@ -581,32 +607,6 @@
                 </label>
                 <input type="range" id="overlay-opacity" min="0" max="100" value="0"
                     style="width: 100%; margin-top: 3px;">
-            </div>
-        </div>
-
-        <div class="input-group">
-            <label>텍스트 색상 (Text Colors)</label>
-            <!-- Row 1: Title & Subtitle -->
-            <div style="display: flex; gap: 10px; margin-bottom: 8px;">
-                <div style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
-                    <label style="font-size: 0.75rem; color: #8d99ae;">제목 (Title)</label>
-                    <input type="color" id="color-text-title" value="#ffffff" style="height: 35px; cursor: pointer;">
-                </div>
-                <div style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
-                    <label style="font-size: 0.75rem; color: #8d99ae;">부제 (Subtitle)</label>
-                    <input type="color" id="color-text-subtitle" value="#e0e0e0" style="height: 35px; cursor: pointer;">
-                </div>
-            </div>
-            <!-- Row 2: Series & Accent -->
-            <div style="display: flex; gap: 10px;">
-                <div style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
-                    <label style="font-size: 0.75rem; color: #8d99ae;">태그 (Tag)</label>
-                    <input type="color" id="color-text-series" value="#dbeafe" style="height: 35px; cursor: pointer;">
-                </div>
-                <div style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
-                    <label style="font-size: 0.75rem; color: #8d99ae;">강조선 (Line)</label>
-                    <input type="color" id="color-accent" value="#ffffff" style="height: 35px; cursor: pointer;">
-                </div>
             </div>
         </div>
 
@@ -699,29 +699,29 @@
                 <div class="step-item">
                     <span class="step-num">1</span>
                     <div class="step-content">
-                        <strong>비율 설정 (Size)</strong>
-                        <p>유튜브(16:9), 인스타(1:1) 등 목적에 맞는 비율을 선택하세요.</p>
-                    </div>
-                </div>
-                <div class="step-item">
-                    <span class="step-num">2</span>
-                    <div class="step-content">
                         <strong>내용 입력 (Text)</strong>
                         <p>태그, 제목, 부제를 입력하세요. 제목은 Safe Zone을 넘어가면 자동 줄바꿈됩니다.</p>
                     </div>
                 </div>
                 <div class="step-item">
-                    <span class="step-num">3</span>
+                    <span class="step-num">2</span>
                     <div class="step-content">
                         <strong>스타일 커스텀 (Style)</strong>
                         <p>폰트 종류와 크기, 굵기를 조절하고 텍스트 색상을 변경하여 가독성을 높이세요.</p>
                     </div>
                 </div>
                 <div class="step-item">
-                    <span class="step-num">4</span>
+                    <span class="step-num">3</span>
                     <div class="step-content">
                         <strong>배경 꾸미기 (Background)</strong>
                         <p>그라디언트 색상을 조합하거나 이미지를 업로드할 수 있습니다.</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <span class="step-num">4</span>
+                    <div class="step-content">
+                        <strong>비율 설정 (Size)</strong>
+                        <p>유튜브(16:9), 인스타(1:1) 등 목적에 맞는 비율을 선택하세요.</p>
                     </div>
                 </div>
                 <div class="step-item">
