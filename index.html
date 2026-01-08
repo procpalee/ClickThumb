@@ -325,13 +325,139 @@
             transform: none !important;
             box-shadow: none !important;
         }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 100;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: #1e293b;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            animation: modalFadeIn 0.3s ease;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #2a3b55;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #8d99ae;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            margin: 0;
+            line-height: 1;
+        }
+
+        .close-btn:hover {
+            color: white;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            color: #dbeafe;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .step-item {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .step-num {
+            background: var(--accent-color);
+            color: #1e293b;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .step-content strong {
+            display: block;
+            color: white;
+            margin-bottom: 4px;
+        }
+
+        .step-content p {
+            margin: 0;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        /* Scrollbar for modal */
+        .modal-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .modal-body::-webkit-scrollbar-thumb {
+            background: #2a3b55;
+            border-radius: 3px;
+        }
     </style>
 </head>
 
 <body>
 
     <div class="controls">
-        <h2>Thumbnail Creator</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2 style="margin:0;">Thumbnail Creator</h2>
+            <button onclick="toggleHelp()"
+                style="margin:0; padding: 0.5rem 0.8rem; font-size: 0.8rem; background: #2a3b55; height: auto;">사용법</button>
+        </div>
 
         <!-- Content Inputs -->
         <div class="input-group">
@@ -562,8 +688,67 @@
         </div>
     </div>
 
+    <!-- Help Modal -->
+    <div id="help-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>사용 방법</h3>
+                <button class="close-btn" onclick="toggleHelp()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="step-item">
+                    <span class="step-num">1</span>
+                    <div class="step-content">
+                        <strong>비율 설정 (Size)</strong>
+                        <p>유튜브(16:9), 인스타(1:1) 등 목적에 맞는 비율을 선택하세요.</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <span class="step-num">2</span>
+                    <div class="step-content">
+                        <strong>내용 입력 (Text)</strong>
+                        <p>태그, 제목, 부제를 입력하세요. 제목은 Safe Zone을 넘어가면 자동 줄바꿈됩니다.</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <span class="step-num">3</span>
+                    <div class="step-content">
+                        <strong>스타일 커스텀 (Style)</strong>
+                        <p>폰트 종류와 크기, 굵기를 조절하고 텍스트 색상을 변경하여 가독성을 높이세요.</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <span class="step-num">4</span>
+                    <div class="step-content">
+                        <strong>배경 꾸미기 (Background)</strong>
+                        <p>그라디언트 색상을 조합하거나 이미지를 업로드할 수 있습니다.</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <span class="step-num">5</span>
+                    <div class="step-content">
+                        <strong>저장 (Save)</strong>
+                        <p>블로그용은 WebP, 투명 배경은 PNG로 고화질 다운로드 하세요.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
     <script>
+        // Modal Logic
+        function toggleHelp() {
+            const modal = document.getElementById('help-modal');
+            const isFlex = modal.style.display === 'flex';
+            modal.style.display = isFlex ? 'none' : 'flex';
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('help-modal').addEventListener('click', function (e) {
+            if (e.target === this) toggleHelp();
+        });
+
         const inputs = ['series', 'title', 'subtitle', 'width', 'height'];
         const colorInputs = ['color-bg-start', 'color-bg-end', 'color-accent', 'color-text-title', 'color-text-subtitle', 'color-text-series'];
         const metaInputs = [
