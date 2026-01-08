@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Thumbnail Generator</title>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <link rel="stylesheet" as="style" crossorigin
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@100;300;400;500;700;900&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-color: #ffffff;
+            --input-bg: rgba(0, 0, 0, 0.3);
+            --accent-color: #60a5fa;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0f172a;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            color: var(--text-color);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar (Controls) */
+        .controls {
+            width: 350px;
+            background: #16213e;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            border-right: 1px solid #2a3b55;
+            overflow-y: auto;
+            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+        }
+
+        .controls h2 {
+            margin: 0 0 1rem 0;
+            font-size: 1.5rem;
+            background: linear-gradient(to right, #00d2ff, #3a7bd5);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .input-group label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #8d99ae;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 8px;
+            border: 1px solid #2a3b55;
+            background: var(--input-bg);
+            color: #fff;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(0, 210, 255, 0.2);
+        }
+
+        .size-inputs {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .size-inputs .input-group {
+            flex: 1;
+        }
+
+        button {
+            padding: 1rem;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 100%);
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: auto;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 210, 255, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        /* Main Preview Area */
+        .preview-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(98, 116, 231, 0.2) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(235, 59, 90, 0.15) 0%, transparent 40%);
+            padding: 2rem;
+            overflow: auto;
+        }
+
+        /* The Thumbnail Design */
+        #thumbnail {
+            width: 800px;
+            /* Default width */
+            height: 450px;
+            /* Default height */
+            background: var(--bg-gradient);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px;
+            box-sizing: border-box;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            transform-origin: center center;
+            transition: width 0.3s, height 0.3s;
+            text-align: center;
+        }
+
+        /* Abstract Mesh/Blob Background Elements */
+        .blob {
+            position: absolute;
+            filter: blur(80px);
+            opacity: 0.5;
+            z-index: 0;
+            animation: float 10s infinite ease-in-out;
+        }
+
+        .blob-1 {
+            top: -10%;
+            right: -10%;
+            width: 60%;
+            height: 60%;
+            background: #4f46e5;
+            border-radius: 50%;
+        }
+
+        .blob-2 {
+            bottom: -20%;
+            left: -10%;
+            width: 50%;
+            height: 50%;
+            background: #2563eb;
+            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+            animation-delay: -2s;
+        }
+
+        .blob-3 {
+            top: 40%;
+            left: 40%;
+            width: 30%;
+            height: 30%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+            animation-delay: -5s;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+
+            33% {
+                transform: translate(30px, -50px) rotate(10deg);
+            }
+
+            66% {
+                transform: translate(-20px, 20px) rotate(-5deg);
+            }
+        }
+
+        /* Glass Card Overlay (Optional, for text readability) */
+        .content-layer {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+            width: 100%;
+        }
+
+        #content-wrapper>* {
+            max-width: 100%;
+            white-space: pre-wrap;
+            /* Ensure wrapping works for all text elements */
+        }
+
+        .series-tag {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 18px;
+            border-radius: 999px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #dbeafe;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            width: fit-content;
+            margin-bottom: 10px;
+            white-space: nowrap !important;
+            /* Prevent line breaks */
+        }
+
+        .main-title {
+            font-size: 3.5rem;
+            font-weight: 900;
+            line-height: 1.2;
+            margin: 0 0 10px 0;
+            /* Added margin-bottom 25px */
+            background: linear-gradient(to right, #ffffff, #e0e0e0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            word-break: keep-all;
+        }
+
+        .sub-title {
+            font-size: 1.8rem;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.8);
+            margin: 0;
+            line-height: 1.2;
+            word-break: keep-all;
+            white-space: pre-wrap;
+            /* Allow wrapping and newlines */
+        }
+
+        .main-title {
+            white-space: pre-wrap;
+            /* Allow newlines */
+        }
+
+        textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 8px;
+            border: 1px solid #2a3b55;
+            background: var(--input-bg);
+            color: #fff;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.3s ease;
+            resize: vertical;
+            min-height: 2.5rem;
+        }
+
+        textarea:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(0, 210, 255, 0.2);
+        }
+
+        /* Decorative line */
+        .deco-line {
+            width: 60px;
+            height: 4px;
+            background: var(--accent-color);
+            border-radius: 3px;
+            margin-top: 15px;
+            box-shadow: 0 0 20px var(--accent-color);
+        }
+
+        /* Remove hover effect for reset button */
+        #reset-bg-btn:hover {
+            transform: none !important;
+            box-shadow: none !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="controls">
+        <h2>Thumbnail Creator</h2>
+
+        <!-- Content Inputs -->
+        <div class="input-group">
+            <label for="series">태그 (Tag)</label>
+            <input type="text" id="series" value="DEVELOPMENT" placeholder="예: WEB DEV">
+        </div>
+
+        <div class="input-group">
+            <label for="title">제목 (Title)</label>
+            <textarea id="title" placeholder="메인 제목 입력" rows="2">모던 웹 디자인의 정석</textarea>
+        </div>
+
+        <div class="input-group">
+            <label for="subtitle">부제 (Subtitle)</label>
+            <textarea id="subtitle" placeholder="부제 또는 설명 입력" rows="2">HTML/CSS로 만드는 썸네일 생성기</textarea>
+        </div>
+
+        <!-- Typography Settings -->
+        <div class="input-group">
+            <label>폰트 설정 (Font Family)</label>
+
+            <div style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 5px;">
+                <label style="font-size: 0.8rem; color: #8d99ae;">메인 텍스트 (제목/부제)</label>
+                <select id="font-family-main">
+                    <option value="'Pretendard', sans-serif">Pretendard (기본)</option>
+                    <option value="'Noto Sans KR', sans-serif">Noto Sans KR</option>
+                    <option value="'Gowun Batang', serif">Gowun Batang (명조)</option>
+                </select>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+                <label style="font-size: 0.8rem; color: #8d99ae;">태그 (Tag)</label>
+                <select id="font-family-series">
+                    <option value="'Pretendard', sans-serif">Pretendard (기본)</option>
+                    <option value="'Noto Sans KR', sans-serif">Noto Sans KR</option>
+                    <option value="'Gowun Batang', serif">Gowun Batang (명조)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>크기 및 굵기 (Size & Weight)</label>
+
+            <!-- Series Settings -->
+            <div style="display: flex; gap: 10px; align-items: end; margin-bottom: 8px;">
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
+                    <label style="font-size: 0.75rem; color: #8d99ae;">태그 크기</label>
+                    <input type="number" id="size-series" value="1.4" step="0.1">
+                </div>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
+                    <label style="font-size: 0.75rem; color: #8d99ae;">태그 굵기</label>
+                    <select id="weight-series">
+                        <option value="400">Regular (400)</option>
+                        <option value="600" selected>SemiBold (600)</option>
+                        <option value="700">Bold (700)</option>
+                        <option value="900">Black (900)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Title Settings -->
+            <div style="display: flex; gap: 10px; align-items: end; margin-bottom: 8px;">
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
+                    <label style="font-size: 0.75rem; color: #8d99ae;">제목 크기</label>
+                    <input type="number" id="size-title" value="4.0" step="0.1">
+                </div>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
+                    <label style="font-size: 0.75rem; color: #8d99ae;">제목 굵기</label>
+                    <select id="weight-title">
+                        <option value="400">Regular (400)</option>
+                        <option value="700">Bold (700)</option>
+                        <option value="900" selected>Black (900)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Subtitle Settings -->
+            <div style="display: flex; gap: 10px; align-items: end;">
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
+                    <label style="font-size: 0.75rem; color: #8d99ae;">부제 크기</label>
+                    <input type="number" id="size-subtitle" value="2.5" step="0.1">
+                </div>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
+                    <label style="font-size: 0.75rem; color: #8d99ae;">부제 굵기</label>
+                    <select id="weight-subtitle">
+                        <option value="300">Light (300)</option>
+                        <option value="400" selected>Regular (400)</option>
+                        <option value="600">SemiBold (600)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Style Inputs -->
+        <div class="input-group">
+            <label>배경 설정 (Background)</label>
+            <div style="display: flex; gap: 10px; margin-bottom: 5px;">
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
+                    <label style="font-size: 0.75rem; color: #8d99ae;">시작 색상</label>
+                    <input type="color" id="color-bg-start" value="#4f46e5" title="그라디언트 시작색"
+                        style="height: 40px; cursor: pointer;">
+                </div>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
+                    <label style="font-size: 0.75rem; color: #8d99ae;">끝 색상</label>
+                    <input type="color" id="color-bg-end" value="#3b82f6" title="그라디언트 끝색"
+                        style="height: 40px; cursor: pointer;">
+                </div>
+            </div>
+            <div style="display: flex; gap: 5px;">
+                <label for="bg-image-upload"
+                    style="flex: 1; display: flex; align-items: center; justify-content: center; background: #2a3b55; color: white; border-radius: 8px; cursor: pointer; font-size: 0.8rem; height: 35px; margin-bottom: 0;">
+                    이미지 업로드
+                    <input type="file" id="bg-image-upload" accept="image/*" style="display: none;">
+                </label>
+                <button id="reset-bg-btn"
+                    style="flex: 1; margin-top: 0; height: 35px; padding: 0.5rem; background: #1f2937; font-size: 0.8rem;">초기화</button>
+            </div>
+            <div style="margin-top: 8px;">
+                <label style="font-size: 0.75rem; color: #8d99ae; display: flex; justify-content: space-between;">
+                    배경 어둡기 (Overlay) <span id="overlay-value">0%</span>
+                </label>
+                <input type="range" id="overlay-opacity" min="0" max="100" value="0"
+                    style="width: 100%; margin-top: 3px;">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>텍스트 색상 (Text Colors)</label>
+            <!-- Row 1: Title & Subtitle -->
+            <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
+                    <label style="font-size: 0.75rem; color: #8d99ae;">제목 (Title)</label>
+                    <input type="color" id="color-text-title" value="#ffffff" style="height: 35px; cursor: pointer;">
+                </div>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
+                    <label style="font-size: 0.75rem; color: #8d99ae;">부제 (Subtitle)</label>
+                    <input type="color" id="color-text-subtitle" value="#e0e0e0" style="height: 35px; cursor: pointer;">
+                </div>
+            </div>
+            <!-- Row 2: Series & Accent -->
+            <div style="display: flex; gap: 10px;">
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
+                    <label style="font-size: 0.75rem; color: #8d99ae;">태그 (Tag)</label>
+                    <input type="color" id="color-text-series" value="#dbeafe" style="height: 35px; cursor: pointer;">
+                </div>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
+                    <label style="font-size: 0.75rem; color: #8d99ae;">강조선 (Line)</label>
+                    <input type="color" id="color-accent" value="#ffffff" style="height: 35px; cursor: pointer;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Size & Export Inputs -->
+        <div class="size-inputs">
+            <div class="input-group">
+                <label for="aspect-ratio">배경 비율 (Background Ratio)</label>
+                <select id="aspect-ratio">
+                    <option value="1.777777778" selected>16:9</option>
+                    <option value="1.333333333">4:3</option>
+                    <option value="1">1:1</option>
+                    <option value="custom">사용자 지정</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label for="content-ratio">콘텐츠 비율 (Safe Zone)</label>
+                <select id="content-ratio">
+                    <option value="1" selected>1:1</option>
+                    <option value="1.333333333">4:3</option>
+                    <option value="1.777777778">16:9</option>
+                    <option value="fit">채우기</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="size-inputs">
+            <div class="input-group">
+                <label for="width">가로 (px)</label>
+                <input type="number" id="width" value="1280">
+            </div>
+            <div class="input-group">
+                <label for="height">세로 (px)</label>
+                <input type="number" id="height" value="720">
+            </div>
+        </div>
+
+        <div class="size-inputs">
+            <div class="input-group">
+                <label for="export-scale">화질 (Scale)</label>
+                <select id="export-scale">
+                    <option value="1" selected>1x (표준)</option>
+                    <option value="2">2x (고화질)</option>
+                    <option value="4">4x (초고화질)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label for="export-format">포맷 (Format)</label>
+                <select id="export-format">
+                    <option value="png">PNG</option>
+                    <option value="jpeg">JPG</option>
+                    <option value="webp" selected>WebP</option>
+                </select>
+            </div>
+        </div>
+
+        <button onclick="downloadThumbnail()">이미지 다운로드</button>
+    </div>
+
+    <div class="preview-container">
+        <div id="thumbnail">
+            <!-- Background Elements -->
+            <div class="blob blob-1"></div>
+            <div class="blob blob-2"></div>
+            <div class="blob blob-3"></div>
+            <div class="overlay" id="preview-overlay"
+                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; opacity: 0; z-index: 1;">
+            </div>
+
+            <!-- Content -->
+            <div class="content-layer" style="position: relative; z-index: 2;">
+                <div id="content-wrapper"
+                    style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%;">
+                    <div class="series-tag" id="preview-series">DEVELOPMENT</div>
+                    <h1 class="main-title" id="preview-title">모던 웹 디자인의 정석</h1>
+                    <p class="sub-title" id="preview-subtitle">HTML/CSS로 만드는 썸네일 생성기</p>
+                    <div class="deco-line"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
+    <script>
+        const inputs = ['series', 'title', 'subtitle', 'width', 'height'];
+        const colorInputs = ['color-bg-start', 'color-bg-end', 'color-accent', 'color-text-title', 'color-text-subtitle', 'color-text-series'];
+        const metaInputs = [
+            'font-family-main', 'font-family-series',
+            'size-series', 'size-title', 'size-subtitle',
+            'weight-series', 'weight-title', 'weight-subtitle',
+            'overlay-opacity'
+        ];
+
+        // Update function for live preview
+        function updatePreview() {
+            // Text & Size Inputs
+            inputs.forEach(id => {
+                const element = document.getElementById(id);
+                const value = element.value;
+
+                if (id === 'width') {
+                    document.getElementById('thumbnail').style.width = value + 'px';
+                } else if (id === 'height') {
+                    document.getElementById('thumbnail').style.height = value + 'px';
+                } else {
+                    const previewElement = document.getElementById('preview-' + id);
+                    if (previewElement) {
+                        previewElement.innerText = value;
+                        // Hide element if empty to maintain layout spacing
+                        previewElement.style.display = value.trim() === '' ? 'none' : 'block';
+                    }
+                }
+            });
+
+            // Color Inputs
+            const bgStart = document.getElementById('color-bg-start').value;
+            const bgEnd = document.getElementById('color-bg-end').value;
+            const accent = document.getElementById('color-accent').value;
+            const textTitle = document.getElementById('color-text-title').value;
+            const textSubtitle = document.getElementById('color-text-subtitle').value;
+            const textSeries = document.getElementById('color-text-series').value;
+
+            const root = document.documentElement;
+            // Only update gradient if no background image is set (handled in file input)
+            if (!document.getElementById('thumbnail').style.backgroundImage.includes('url')) {
+                root.style.setProperty('--bg-gradient', `linear-gradient(135deg, ${bgStart} 0%, ${bgEnd} 100%)`);
+                // Update blob colors to harmonize
+                document.querySelector('.blob-1').style.background = bgStart;
+                document.querySelector('.blob-2').style.background = bgEnd;
+            }
+
+            root.style.setProperty('--accent-color', accent);
+
+            // Text Colors
+            // Title: use gradient if Title is white (default style), else solid/simple gradient
+            const titleEl = document.querySelector('.main-title');
+            if (textTitle === '#ffffff') {
+                titleEl.style.background = `linear-gradient(to right, #ffffff, #e0e0e0)`;
+                titleEl.style.webkitBackgroundClip = 'text';
+                titleEl.style.webkitTextFillColor = 'transparent';
+            } else {
+                titleEl.style.background = `linear-gradient(to right, ${textTitle}, ${textTitle})`;
+                titleEl.style.webkitBackgroundClip = 'text';
+                titleEl.style.webkitTextFillColor = 'transparent';
+            }
+
+            // If user wants solid color, we can just set color, but we use gradient for title style. 
+            // For simple solid change effectively:
+            // Subtitle
+            document.querySelector('.sub-title').style.color = textSubtitle;
+
+            document.querySelector('.series-tag').style.color = textSeries;
+            document.querySelector('.series-tag').style.borderColor = textSeries;
+            document.querySelector('.series-tag').style.backgroundColor = hexToRgba(textSeries, 0.1);
+
+            // Typography & Layout Inputs
+            const fontMain = document.getElementById('font-family-main').value;
+            const fontSeries = document.getElementById('font-family-series').value;
+
+            // Apply Fonts
+            document.getElementById('thumbnail').style.fontFamily = fontMain; // Base font
+            document.getElementById('preview-series').style.fontFamily = fontSeries; // Series override
+
+            // Apply Sizes
+            document.getElementById('preview-series').style.fontSize = document.getElementById('size-series').value + 'rem';
+            document.getElementById('preview-title').style.fontSize = document.getElementById('size-title').value + 'rem';
+            document.getElementById('preview-subtitle').style.fontSize = document.getElementById('size-subtitle').value + 'rem';
+
+            // Apply Weights
+            document.getElementById('preview-series').style.fontWeight = document.getElementById('weight-series').value;
+            document.getElementById('preview-title').style.fontWeight = document.getElementById('weight-title').value;
+            document.getElementById('preview-subtitle').style.fontWeight = document.getElementById('weight-subtitle').value;
+
+            // Apply Overlay Opacity
+            const overlayOpacity = document.getElementById('overlay-opacity').value;
+            document.getElementById('preview-overlay').style.opacity = overlayOpacity / 100;
+            document.getElementById('overlay-value').innerText = overlayOpacity + '%';
+
+            // Apply Content Ratio (Safe Zone)
+            applyContentRatio();
+
+            // Adjust preview scale to fit screen if too large
+            adjustScale();
+        }
+
+        // Logic to constrain content to specific ratio
+        function applyContentRatio() {
+            const contentRatioSelect = document.getElementById('content-ratio');
+            const wrapper = document.getElementById('content-wrapper');
+            // Read dimensions directly from inputs to ensure sync
+            const currentWidth = parseInt(document.getElementById('width').value) || 800;
+            const currentHeight = parseInt(document.getElementById('height').value) || 450;
+
+            const padding = 60; // from #thumbnail padding: 60px
+            const availableW = currentWidth - (padding * 2);
+            const availableH = currentHeight - (padding * 2);
+
+            if (contentRatioSelect.value === 'fit') {
+                wrapper.style.width = '100%';
+                wrapper.style.height = '100%';
+            } else {
+                const targetRatio = parseFloat(contentRatioSelect.value);
+
+                // User requested: Width based on Height (Priority: Height)
+                // Let's maximize Height first, then calculate Width
+                let h = availableH;
+                let w = h * targetRatio;
+
+                // However, we must fit inside available Width too
+                if (w > availableW) {
+                    w = availableW;
+                    h = w / targetRatio;
+                }
+
+                wrapper.style.width = w + 'px';
+                wrapper.style.height = h + 'px';
+            }
+        }
+
+        // Auto-scale logic to fit the preview container
+        function adjustScale() {
+            const container = document.querySelector('.preview-container');
+            const thumbnail = document.getElementById('thumbnail');
+            const containerWidth = container.clientWidth - 100; // padding
+            const containerHeight = container.clientHeight - 100;
+            const thumbWidth = thumbnail.offsetWidth;
+            const thumbHeight = thumbnail.offsetHeight;
+
+            const scaleX = containerWidth / thumbWidth;
+            const scaleY = containerHeight / thumbHeight;
+            const scale = Math.min(scaleX, scaleY, 1); // Never scale up beyond 1.0
+
+            thumbnail.style.transform = `scale(${scale})`;
+        }
+
+        // Helper: Hex to RGBA
+        function hexToRgba(hex, alpha) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        // Background Image Handler
+        document.getElementById('bg-image-upload').addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    const thumbnail = document.getElementById('thumbnail');
+                    thumbnail.style.background = `url(${event.target.result}) center/cover no-repeat`;
+                    // Hide blobs when image is used
+                    document.querySelectorAll('.blob').forEach(el => el.style.display = 'none');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Reset Background Handler
+        document.getElementById('reset-bg-btn').addEventListener('click', function () {
+            const thumbnail = document.getElementById('thumbnail');
+            thumbnail.style.background = ''; // Removes inline background-image
+            thumbnail.style.backgroundImage = ''; // Ensure clear
+            // Restore blobs
+            document.querySelectorAll('.blob').forEach(el => el.style.display = 'block');
+
+            // Re-apply gradient from inputs
+            updatePreview();
+        });
+
+        // Aspect Ratio Logic
+        const ratioSelect = document.getElementById('aspect-ratio');
+        const widthInput = document.getElementById('width');
+        const heightInput = document.getElementById('height');
+
+        ratioSelect.addEventListener('change', function () {
+            if (this.value !== 'custom') {
+                const width = parseInt(widthInput.value);
+                const ratio = parseFloat(this.value);
+                const newHeight = Math.round(width / ratio);
+                heightInput.value = newHeight;
+                updatePreview();
+            }
+        });
+
+        widthInput.addEventListener('input', function () {
+            if (ratioSelect.value !== 'custom') {
+                const width = parseInt(this.value);
+                const ratio = parseFloat(ratioSelect.value);
+                const newHeight = Math.round(width / ratio);
+                heightInput.value = newHeight;
+                // updatePreview is called by the inputs loop below
+            }
+        });
+
+        heightInput.addEventListener('input', function () {
+            // If user manually changes height, switch to custom
+            ratioSelect.value = 'custom';
+            // updatePreview is called by the inputs loop below
+        });
+
+        // Listen for Content Ratio change
+        document.getElementById('content-ratio').addEventListener('change', updatePreview);
+
+        // Event Listeners
+        inputs.forEach(id => {
+            document.getElementById(id).addEventListener('input', updatePreview);
+        });
+        colorInputs.forEach(id => {
+            document.getElementById(id).addEventListener('input', updatePreview);
+        });
+        metaInputs.forEach(id => {
+            document.getElementById(id).addEventListener('input', updatePreview);
+        });
+
+        window.addEventListener('resize', adjustScale);
+
+        // Download Function using dom-to-image with scaling
+        function downloadThumbnail() {
+            const thumbnail = document.getElementById('thumbnail');
+            const originalTransform = thumbnail.style.transform;
+
+            // Get user settings
+            const outputScale = parseInt(document.getElementById('export-scale').value) || 2;
+            const format = document.getElementById('export-format').value || 'png';
+
+            // Options
+            const options = {
+                width: thumbnail.offsetWidth * outputScale,
+                height: thumbnail.offsetHeight * outputScale,
+                style: {
+                    transform: `scale(${outputScale})`,
+                    transformOrigin: 'top left',
+                    width: thumbnail.offsetWidth + 'px',
+                    height: thumbnail.offsetHeight + 'px'
+                }
+            };
+
+            // Handle WebP separately or via intermediate canvas if needed, 
+            // but first let's try direct map. 
+            // dom-to-image 2.6.0 doesn't have direct toWebp. 
+            // We'll use toPng -> Canvas -> WebP for broad compatibility.
+
+            let promise;
+            if (format === 'webp') {
+                promise = domtoimage.toPng(thumbnail, options).then(dataUrl => {
+                    return new Promise((resolve) => {
+                        const img = new Image();
+                        img.src = dataUrl;
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = options.width;
+                            canvas.height = options.height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0);
+                            resolve(canvas.toDataURL('image/webp', 0.9));
+                        };
+                    });
+                });
+            } else if (format === 'jpeg') {
+                options.quality = 0.95;
+                promise = domtoimage.toJpeg(thumbnail, options);
+            } else {
+                promise = domtoimage.toPng(thumbnail, options);
+            }
+
+            promise.then(function (dataUrl) {
+                // Restore original preview scale
+                thumbnail.style.transform = originalTransform;
+
+                const link = document.createElement('a');
+                link.download = `thumbnail-${Date.now()}.${format}`;
+                link.href = dataUrl;
+                link.click();
+            })
+                .catch(function (error) {
+                    console.error('oops, something went wrong!', error);
+                    alert('이미지 저장 중 오류가 발생했습니다: ' + error.message);
+                    thumbnail.style.transform = originalTransform;
+                });
+        }
+
+        // Initial call
+        updatePreview();
+        adjustScale();
+    </script>
+</body>
+
+</html>
