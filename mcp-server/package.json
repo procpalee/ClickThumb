@@ -1,0 +1,27 @@
+{
+  "name": "clickthumb-mcp",
+  "version": "1.0.0",
+  "description": "MCP server that lets an AI agent generate and export ClickThumb thumbnails programmatically (smart auto-layout via headless Chromium).",
+  "type": "module",
+  "bin": {
+    "clickthumb-mcp": "src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "postinstall": "playwright install chromium",
+    "inspect": "npx @modelcontextprotocol/inspector node src/index.js",
+    "test": "node test/dom-logic.test.js",
+    "test:smoke": "node test/smoke.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.0",
+    "playwright": "^1.48.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "jsdom": "^25.0.0"
+  }
+}

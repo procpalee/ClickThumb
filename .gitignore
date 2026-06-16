@@ -10,3 +10,8 @@ Desktop.ini
 .idea/
 .vscode/
 *.swp
+
+# Node / MCP server
+node_modules/
+mcp-server/node_modules/
+*.tgz

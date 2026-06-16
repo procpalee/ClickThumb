@@ -473,6 +473,72 @@
             color: #2563eb;
             text-decoration: underline;
         }
+
+        /* === ClickThumb AI / 추가 기능 스타일 === */
+        /* 자동 줄바꿈 균형 (어색한 한 글자 줄바꿈 방지) */
+        .main-title,
+        .sub-title {
+            text-wrap: balance;
+        }
+
+        /* 키워드 강조 (형광펜 / 색) */
+        .main-title .hl,
+        .sub-title .hl {
+            -webkit-text-fill-color: currentColor;
+            color: #fff;
+            background: linear-gradient(transparent 55%, var(--hl-color, #fde047) 55%);
+            padding: 0 0.1em;
+            border-radius: 3px;
+            -webkit-box-decoration-break: clone;
+            box-decoration-break: clone;
+        }
+
+        .main-title .hl.hl-color,
+        .sub-title .hl.hl-color {
+            background: none;
+            color: var(--hl-color, #fde047);
+            -webkit-text-fill-color: var(--hl-color, #fde047);
+        }
+
+        /* 숫자 배지 (TOP N) */
+        .number-badge {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            z-index: 3;
+            background: var(--accent-color);
+            color: #fff;
+            font-weight: 900;
+            padding: 6px 16px;
+            border-radius: 10px;
+            font-size: 1.6rem;
+            line-height: 1.1;
+            letter-spacing: 1px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+            display: none;
+        }
+
+        /* 블로그 핸들 / 워터마크 */
+        .watermark {
+            position: absolute;
+            bottom: 26px;
+            right: 34px;
+            z-index: 3;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .watermark img {
+            height: 1.4em;
+            width: auto;
+            border-radius: 4px;
+        }
     </style>
 </head>
 
@@ -499,6 +565,39 @@
         <div class="input-group">
             <label for="subtitle">부제 (Subtitle)</label>
             <textarea id="subtitle" placeholder="부제 또는 설명 입력" rows="2">HTML/CSS로 만드는 썸네일 생성기</textarea>
+        </div>
+
+        <!-- AI 자동배치 / 추가 기능 -->
+        <div class="input-group"
+            style="background:#13284a; padding:1rem; border-radius:10px; border:1px solid #2a3b55;">
+            <label style="color:#60a5fa;">✨ AI 자동배치 / 추가 기능</label>
+            <div style="display:flex; flex-direction:column; gap:5px; margin-bottom:6px;">
+                <label style="font-size:0.8rem; color:#8d99ae;">디자인 테마</label>
+                <select id="ct-theme">
+                    <option value="">현재 색상 유지</option>
+                    <option value="midnight">Midnight (인디고→블루)</option>
+                    <option value="mono">Mono (그레이/블랙)</option>
+                    <option value="warm">Warm (오렌지→레드)</option>
+                    <option value="forest">Forest (딥그린→틸)</option>
+                    <option value="berry">Berry (퍼플→핑크)</option>
+                </select>
+            </div>
+            <div style="display:flex; gap:10px; margin-bottom:6px;">
+                <div style="flex:1; display:flex; flex-direction:column; gap:3px;">
+                    <label style="font-size:0.8rem; color:#8d99ae;">블로그 핸들/워터마크</label>
+                    <input type="text" id="ct-handle" placeholder="예: @procpa">
+                </div>
+                <div style="flex:1; display:flex; flex-direction:column; gap:3px;">
+                    <label style="font-size:0.8rem; color:#8d99ae;">숫자 배지</label>
+                    <input type="text" id="ct-badge" placeholder="예: TOP 5">
+                </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:3px; margin-bottom:8px;">
+                <label style="font-size:0.8rem; color:#8d99ae;">키워드 강조 (쉼표로 구분)</label>
+                <input type="text" id="ct-highlight" placeholder="예: 썸네일, 자동">
+            </div>
+            <button type="button" onclick="runAutoLayout()"
+                style="margin-top:0; padding:0.7rem; font-size:0.9rem;">✨ 자동 배치 적용</button>
         </div>
 
         <!-- Typography Settings -->
@@ -701,6 +800,10 @@
                 <div class="overlay" id="preview-overlay"
                     style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; opacity: 0; z-index: 1;">
                 </div>
+
+                <!-- Badge & Watermark (corner elements) -->
+                <div class="number-badge" id="preview-badge"></div>
+                <div class="watermark" id="preview-watermark"></div>
 
                 <!-- Content -->
                 <div class="content-layer" style="position: relative; z-index: 2;">
@@ -1016,16 +1119,17 @@
 
         window.addEventListener('resize', adjustScale);
 
-        // Download Function using dom-to-image with scaling
-        function downloadThumbnail() {
+        // Pure render core: returns Promise<dataURL>, no download side effect.
+        // Reused by both the human download button and the programmatic API.
+        function renderToDataURL(opts) {
+            opts = opts || {};
             const thumbnail = document.getElementById('thumbnail');
             const originalTransform = thumbnail.style.transform;
 
-            // Get user settings
-            const outputScale = parseInt(document.getElementById('export-scale').value) || 2;
-            const format = document.getElementById('export-format').value || 'png';
+            const outputScale = parseInt(opts.scale, 10) ||
+                parseInt(document.getElementById('export-scale').value, 10) || 2;
+            const format = opts.format || document.getElementById('export-format').value || 'png';
 
-            // Options
             const options = {
                 width: thumbnail.offsetWidth * outputScale,
                 height: thumbnail.offsetHeight * outputScale,
@@ -1037,11 +1141,7 @@
                 }
             };
 
-            // Handle WebP separately or via intermediate canvas if needed, 
-            // but first let's try direct map. 
-            // dom-to-image 2.6.0 doesn't have direct toWebp. 
-            // We'll use toPng -> Canvas -> WebP for broad compatibility.
-
+            // dom-to-image 2.6.0 has no direct toWebp -> render PNG, draw to canvas, export WebP.
             let promise;
             if (format === 'webp') {
                 promise = domtoimage.toPng(thumbnail, options).then(dataUrl => {
@@ -1065,25 +1165,273 @@
                 promise = domtoimage.toPng(thumbnail, options);
             }
 
-            promise.then(function (dataUrl) {
-                // Restore original preview scale
+            // Always restore the on-screen preview scale afterwards.
+            return promise.then(function (dataUrl) {
                 thumbnail.style.transform = originalTransform;
+                return dataUrl;
+            }, function (error) {
+                thumbnail.style.transform = originalTransform;
+                throw error;
+            });
+        }
 
+        // Download Function (human UI): render then trigger browser download.
+        function downloadThumbnail() {
+            const format = document.getElementById('export-format').value || 'png';
+            renderToDataURL().then(function (dataUrl) {
                 const link = document.createElement('a');
                 link.download = `thumbnail-${Date.now()}.${format}`;
                 link.href = dataUrl;
                 link.click();
-            })
-                .catch(function (error) {
-                    console.error('oops, something went wrong!', error);
-                    alert('이미지 저장 중 오류가 발생했습니다: ' + error.message);
-                    thumbnail.style.transform = originalTransform;
-                });
+            }).catch(function (error) {
+                console.error('oops, something went wrong!', error);
+                alert('이미지 저장 중 오류가 발생했습니다: ' + error.message);
+            });
         }
 
         // Initial call
         updatePreview();
         adjustScale();
+
+        /* =====================================================================
+           ClickThumb 프로그래밍 / 스마트 자동배치 API
+           - 입력값을 세팅하고 기존 updatePreview()를 호출해 사람 UI와 동일 렌더
+           - MCP 서버(헤드리스 브라우저)와 사람 UI가 함께 재사용
+           ===================================================================== */
+        window.ClickThumb = {
+            // config 키 -> 입력 element ID
+            FIELD_MAP: {
+                series: 'series', title: 'title', subtitle: 'subtitle',
+                width: 'width', height: 'height',
+                fontFamilyMain: 'font-family-main', fontFamilySeries: 'font-family-series',
+                sizeSeries: 'size-series', sizeTitle: 'size-title', sizeSubtitle: 'size-subtitle',
+                weightSeries: 'weight-series', weightTitle: 'weight-title', weightSubtitle: 'weight-subtitle',
+                colorBgStart: 'color-bg-start', colorBgEnd: 'color-bg-end', colorAccent: 'color-accent',
+                colorTextTitle: 'color-text-title', colorTextSubtitle: 'color-text-subtitle', colorTextSeries: 'color-text-series',
+                overlayOpacity: 'overlay-opacity', aspectRatio: 'aspect-ratio', contentRatio: 'content-ratio',
+                exportScale: 'export-scale', exportFormat: 'export-format'
+            },
+
+            // 디자인 프리셋/테마 (글자색은 흰색 고정이므로 배경/포인트/형광펜 색을 제어)
+            THEMES: {
+                midnight: { bgStart: '#4f46e5', bgEnd: '#3b82f6', accent: '#60a5fa', tag: '#ffffff', hl: '#fde047', desc: '인디고→블루, 기본/테크' },
+                mono: { bgStart: '#1f2937', bgEnd: '#111827', accent: '#9ca3af', tag: '#ffffff', hl: '#facc15', desc: '그레이/블랙, 미니멀' },
+                warm: { bgStart: '#f97316', bgEnd: '#dc2626', accent: '#fed7aa', tag: '#ffffff', hl: '#fde047', desc: '오렌지→레드, 따뜻함' },
+                forest: { bgStart: '#047857', bgEnd: '#0f766e', accent: '#6ee7b7', tag: '#ffffff', hl: '#fde047', desc: '딥그린→틸, 자연' },
+                berry: { bgStart: '#7c3aed', bgEnd: '#db2777', accent: '#f0abfc', tag: '#ffffff', hl: '#fde047', desc: '퍼플→핑크, 감성' }
+            },
+
+            applyTheme: function (name) {
+                const t = this.THEMES[name] || this.THEMES.midnight;
+                const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+                set('color-bg-start', t.bgStart);
+                set('color-bg-end', t.bgEnd);
+                set('color-accent', t.accent);
+                set('color-text-series', t.tag);
+                document.documentElement.style.setProperty('--hl-color', t.hl);
+            },
+
+            applyConfig: function (config) {
+                config = config || {};
+                const thumbnail = document.getElementById('thumbnail');
+
+                // 배경 이미지 (업로드 핸들러와 동일 처리)
+                if (config.backgroundImage) {
+                    thumbnail.style.background = `url(${config.backgroundImage}) center/cover no-repeat`;
+                    document.querySelectorAll('.blob').forEach(el => el.style.display = 'none');
+                } else if (config.backgroundImage === null || config.backgroundImage === '') {
+                    thumbnail.style.background = '';
+                    thumbnail.style.backgroundImage = '';
+                    document.querySelectorAll('.blob').forEach(el => el.style.display = 'block');
+                }
+
+                // 일반 필드 -> 입력값
+                for (const key in this.FIELD_MAP) {
+                    if (config[key] === undefined) continue;
+                    const el = document.getElementById(this.FIELD_MAP[key]);
+                    if (el) el.value = config[key];
+                }
+
+                updatePreview();
+                return true;
+            },
+
+            // 배경 이미지 밝기 분석 (중앙 텍스트 영역의 평균 휘도 0~1)
+            analyzeBrightness: function (dataUrl) {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    img.onload = () => {
+                        try {
+                            const w = 64, h = 64;
+                            const canvas = document.createElement('canvas');
+                            canvas.width = w; canvas.height = h;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, w, h);
+                            // 중앙 60% 영역만 샘플링 (텍스트가 놓이는 곳)
+                            const x0 = Math.floor(w * 0.2), x1 = Math.floor(w * 0.8);
+                            const y0 = Math.floor(h * 0.2), y1 = Math.floor(h * 0.8);
+                            const data = ctx.getImageData(x0, y0, x1 - x0, y1 - y0).data;
+                            let sum = 0, n = 0;
+                            for (let i = 0; i < data.length; i += 4) {
+                                const lum = (0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2]) / 255;
+                                sum += lum; n++;
+                            }
+                            resolve(n ? sum / n : 0.5);
+                        } catch (e) { reject(e); }
+                    };
+                    img.onerror = reject;
+                    img.src = dataUrl;
+                });
+            },
+
+            // 자동 오버레이: 글자색 흰색 고정, 밝을수록 더 어둡게 (최소 0.35로 충분히)
+            autoOverlay: function (brightness) {
+                const opacity = Math.max(0.35, Math.min(0.78, 0.35 + 0.5 * brightness));
+                const el = document.getElementById('overlay-opacity');
+                if (el) el.value = Math.round(opacity * 100);
+                updatePreview();
+            },
+
+            // 자동 폰트 맞춤: 제목/부제가 세이프존을 넘치면 단계적으로 축소
+            fitText: function () {
+                const wrapper = document.getElementById('content-wrapper');
+                const titleInput = document.getElementById('size-title');
+                const subInput = document.getElementById('size-subtitle');
+                const prevJustify = wrapper.style.justifyContent;
+                // 측정 동안 오버플로가 아래로 흐르도록
+                wrapper.style.justifyContent = 'flex-start';
+                const overflows = () =>
+                    wrapper.scrollHeight > wrapper.clientHeight + 1 ||
+                    wrapper.scrollWidth > wrapper.clientWidth + 1;
+                let guard = 0;
+                while (overflows() && guard < 60) {
+                    let t = parseFloat(titleInput.value);
+                    let s = parseFloat(subInput.value);
+                    if (t > 1.6) { titleInput.value = (t - 0.2).toFixed(1); }
+                    else if (s > 1.0) { subInput.value = (s - 0.15).toFixed(1); }
+                    else break;
+                    updatePreview();
+                    guard++;
+                }
+                wrapper.style.justifyContent = prevJustify;
+                updatePreview();
+            },
+
+            setBadge: function (text) {
+                const b = document.getElementById('preview-badge');
+                if (text) { b.textContent = text; b.style.display = 'block'; }
+                else { b.style.display = 'none'; b.textContent = ''; }
+            },
+
+            setWatermark: function (opt) {
+                const w = document.getElementById('preview-watermark');
+                w.innerHTML = '';
+                if (opt && (opt.text || opt.logo)) {
+                    if (opt.logo) { const img = new Image(); img.src = opt.logo; w.appendChild(img); }
+                    if (opt.text) { const s = document.createElement('span'); s.textContent = opt.text; w.appendChild(s); }
+                    w.style.display = 'flex';
+                } else { w.style.display = 'none'; }
+            },
+
+            // 키워드 강조 (innerText를 덮어쓰므로 텍스트 확정 후 마지막에 호출)
+            applyHighlight: function (keywords, opts) {
+                if (!keywords || !keywords.length) return;
+                const mode = (opts && opts.mode) || 'marker';
+                const cls = mode === 'color' ? 'hl hl-color' : 'hl';
+                ['preview-title', 'preview-subtitle'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    let html = el.textContent.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+                    keywords.forEach(kw => {
+                        if (!kw) return;
+                        const esc = String(kw).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                        html = html.replace(new RegExp('(' + esc + ')', 'g'), '<span class="' + cls + '">$1</span>');
+                    });
+                    el.innerHTML = html;
+                });
+            },
+
+            renderToDataURL: function (opts) { return renderToDataURL(opts); },
+
+            // 핵심: 이미지+제목+부제만으로 자동 배치 완성
+            smartLayout: async function (config) {
+                config = config || {};
+                if (config.theme) this.applyTheme(config.theme);
+
+                // 가독성을 위해 글자색 흰색 강제
+                const merged = Object.assign({}, config, {
+                    colorTextTitle: '#ffffff', colorTextSubtitle: '#ffffff', colorTextSeries: '#ffffff'
+                });
+                this.applyConfig(merged);
+
+                // 자동 오버레이
+                if (config.backgroundImage) {
+                    try {
+                        const b = await this.analyzeBrightness(config.backgroundImage);
+                        this.autoOverlay(b);
+                    } catch (e) { this.autoOverlay(0.6); }
+                } else {
+                    const el = document.getElementById('overlay-opacity');
+                    if (el) el.value = 12;
+                    updatePreview();
+                }
+
+                // 폰트 로드 후 자동 폰트 맞춤
+                if (document.fonts && document.fonts.ready) { await document.fonts.ready; }
+                this.fitText();
+
+                // 부가 요소 (텍스트 확정 이후)
+                this.setBadge(config.badge);
+                this.setWatermark(config.handle ? { text: config.handle } : (config.watermark || null));
+                if (config.highlightKeywords && config.highlightKeywords.length) {
+                    this.applyHighlight(config.highlightKeywords, { mode: config.highlightMode || 'marker' });
+                }
+                return true;
+            },
+
+            generate: async function (config) {
+                await this.smartLayout(config);
+                return renderToDataURL({ scale: (config || {}).exportScale, format: (config || {}).exportFormat });
+            }
+        };
+
+        // 사람용 "자동 배치 적용" 버튼 핸들러 (현재 입력 + 추가 기능을 smartLayout으로 재배치)
+        function runAutoLayout() {
+            const val = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+            const theme = val('ct-theme');
+            const handle = val('ct-handle');
+            const badge = val('ct-badge');
+            const kw = val('ct-highlight').split(',').map(s => s.trim()).filter(Boolean);
+
+            // 현재 썸네일에 적용된 배경 이미지(data URL) 추출
+            const bg = document.getElementById('thumbnail').style.backgroundImage;
+            const m = bg && bg.match(/url\(["']?(data:[^"')]+)["']?\)/);
+
+            window.ClickThumb.smartLayout({
+                series: val('series'),
+                title: document.getElementById('title').value,
+                subtitle: document.getElementById('subtitle').value,
+                theme: theme || undefined,
+                handle: handle || undefined,
+                badge: badge || undefined,
+                highlightKeywords: kw,
+                backgroundImage: m ? m[1] : undefined
+            });
+        }
+
+        // URL 파라미터 부팅: ?config=<base64 또는 URI-encoded JSON>
+        (function bootFromUrl() {
+            const raw = new URLSearchParams(location.search).get('config');
+            if (!raw) return;
+            let cfg;
+            try {
+                try { cfg = JSON.parse(decodeURIComponent(raw)); }
+                catch (e) { cfg = JSON.parse(atob(raw)); }
+            } catch (e) { console.error('Bad config param', e); return; }
+            window.__CLICKTHUMB_READY__ = false;
+            window.ClickThumb.smartLayout(cfg).then(() => { window.__CLICKTHUMB_READY__ = true; });
+        })();
     </script>
 </body>
 
