@@ -31,7 +31,7 @@ export const DEFAULTS = {
 
 // Aspect presets exposed to the AI ("16:9" / "1:1").
 export const ASPECTS = {
-  '16:9': { width: 1280, height: 720, aspectRatio: '1.777777778', contentRatio: '1.777777778' },
+  '16:9': { width: 1280, height: 720, aspectRatio: '1.777777778', contentRatio: '1' },
   '1:1': { width: 1080, height: 1080, aspectRatio: '1', contentRatio: '1' }
 };
 
