@@ -25,6 +25,12 @@ await new Promise(r => setTimeout(r, 200));
 check('window.ClickThumb defined', !!window.ClickThumb);
 check('THEMES present (5)', window.ClickThumb && Object.keys(window.ClickThumb.THEMES).length === 5);
 
+// Simplified UI: advanced controls live inside a collapsed <details>, IDs intact.
+check('advanced settings panel exists', !!window.document.getElementById('advanced-settings'));
+check('auto background button exists', !!window.document.getElementById('auto-bg-btn'));
+check('autoBackground API exposed', typeof window.ClickThumb.autoBackground === 'function');
+// Do NOT invoke autoBackground here: jsdom has no fetch/canvas.
+
 // Run smart layout (no bg image -> skips brightness/canvas).
 await window.ClickThumb.smartLayout({
   series: 'GUIDE',
