@@ -76,5 +76,16 @@ check('highlight escapes HTML (XSS-safe)', titleEl.innerHTML.includes('&lt;b&gt;
 window.ClickThumb.applyConfig({ colorTextTitle: '#ff0000', title: '수동' });
 check('manual applyConfig keeps custom color', doc.getElementById('color-text-title').value === '#ff0000');
 
+// Markdown bold emphasis (**word**) + hashtag line below subtitle
+window.ClickThumb.applyConfig({ title: '이건 **강조** 제목', tags: '웹개발, #디자인' });
+const pt = doc.getElementById('preview-title');
+check('markdown bold renders as highlight', /<span class="hl">강조<\/span>/.test(pt.innerHTML) && !pt.innerHTML.includes('**'), pt.innerHTML);
+const tagsEl = doc.getElementById('preview-tags');
+check('tags render as hashtags', tagsEl.textContent === '#웹개발 #디자인', tagsEl.textContent);
+check('tags line visible when set', tagsEl.style.display === 'block');
+window.ClickThumb.applyConfig({ tags: '' });
+check('tags line hidden when empty', tagsEl.style.display === 'none');
+check('badge/highlight inputs removed from UI', !doc.getElementById('ct-badge') && !doc.getElementById('ct-highlight'));
+
 console.log(fail === 0 ? '\n🎉 DOM 로직 테스트 통과' : `\n⚠️ ${fail}개 실패`);
 process.exit(fail ? 1 : 0);

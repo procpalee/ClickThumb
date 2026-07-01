@@ -23,6 +23,7 @@ export async function buildSmartConfig(args) {
     series: args.tag !== undefined ? args.tag : DEFAULTS.series,
     title: args.title,
     subtitle: args.subtitle !== undefined ? args.subtitle : '',
+    tags: args.tags !== undefined ? args.tags : '',
     theme: args.theme,
     handle: args.handle,
     badge: args.badge,

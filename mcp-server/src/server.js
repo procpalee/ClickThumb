@@ -42,7 +42,8 @@ export function createServer() {
     inputSchema: {
       title: z.string().describe('메인 제목'),
       subtitle: z.string().optional().describe('부제/설명 (선택)'),
-      tag: z.string().optional().describe('상단 태그 라벨 (예: DEVELOPMENT). 비우려면 빈 문자열'),
+      tag: z.string().optional().describe('상단 카테고리 라벨 (예: DEVELOPMENT). 비우려면 빈 문자열'),
+      tags: z.string().optional().describe('부제 아래 해시태그 (쉼표 구분, 예: "웹개발, 디자인")'),
       imagePath: z.string().optional().describe('대표 이미지 로컬 파일 경로'),
       imageUrl: z.string().optional().describe('대표 이미지 URL (imagePath 대신)'),
       aspect: z.enum(['16:9', '1:1']).optional().describe('비율 프리셋 (기본 16:9 = 1280×720, 1:1 = 1080×1080)'),
@@ -74,6 +75,7 @@ export function createServer() {
         series: z.string().optional(),
         title: z.string().optional(),
         subtitle: z.string().optional(),
+        tags: z.string().optional(),
         fontFamilyMain: z.string().optional(),
         fontFamilySeries: z.string().optional(),
         sizeSeries: z.number().optional(),

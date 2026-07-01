@@ -352,6 +352,16 @@
             box-shadow: 0 0 20px var(--accent-color);
         }
 
+        /* 해시태그 라인 (부제 아래) */
+        .tags-line {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.7);
+            letter-spacing: 0.5px;
+            margin-top: 14px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+
         /* Remove hover effect for reset button */
         #reset-bg-btn:hover {
             transform: none !important;
@@ -546,11 +556,12 @@
             display: none;
         }
 
-        /* 블로그 핸들 / 워터마크 */
+        /* 블로그 핸들 / 워터마크 (하단 중앙) */
         .watermark {
             position: absolute;
             bottom: 26px;
-            right: 34px;
+            left: 50%;
+            transform: translateX(-50%);
             z-index: 3;
             color: rgba(255, 255, 255, 0.85);
             font-size: 1.1rem;
@@ -581,7 +592,7 @@
 
         <!-- Content Inputs -->
         <div class="input-group">
-            <label for="series">태그 (Tag)</label>
+            <label for="series">카테고리 (Category)</label>
             <input type="text" id="series" value="DEVELOPMENT" placeholder="예: WEB DEV">
         </div>
 
@@ -593,6 +604,11 @@
         <div class="input-group">
             <label for="subtitle">부제 (Subtitle)</label>
             <textarea id="subtitle" placeholder="부제 또는 설명 입력" rows="2">HTML/CSS로 만드는 썸네일 생성기</textarea>
+        </div>
+
+        <div class="input-group">
+            <label for="tags">태그 (Tags)</label>
+            <input type="text" id="tags" value="" placeholder="예: 웹개발, 디자인 (쉼표로 구분)">
         </div>
 
         <button id="auto-bg-btn" type="button" style="margin-top:0; background:#13284a; border:1px solid #2a3b55;">🎲 배경 자동 생성</button>
@@ -619,19 +635,9 @@
                     <option value="berry">Berry (퍼플→핑크)</option>
                 </select>
             </div>
-            <div style="display:flex; gap:10px; margin-bottom:6px;">
-                <div style="flex:1; display:flex; flex-direction:column; gap:3px;">
-                    <label style="font-size:0.8rem; color:#8d99ae;">블로그 핸들/워터마크</label>
-                    <input type="text" id="ct-handle" placeholder="예: @procpa">
-                </div>
-                <div style="flex:1; display:flex; flex-direction:column; gap:3px;">
-                    <label style="font-size:0.8rem; color:#8d99ae;">숫자 배지</label>
-                    <input type="text" id="ct-badge" placeholder="예: TOP 5">
-                </div>
-            </div>
             <div style="display:flex; flex-direction:column; gap:3px; margin-bottom:8px;">
-                <label style="font-size:0.8rem; color:#8d99ae;">키워드 강조 (쉼표로 구분)</label>
-                <input type="text" id="ct-highlight" placeholder="예: 썸네일, 자동">
+                <label style="font-size:0.8rem; color:#8d99ae;">블로그 핸들/워터마크</label>
+                <input type="text" id="ct-handle" placeholder="예: @procpa">
             </div>
             <button type="button" onclick="runAutoLayout()"
                 style="margin-top:0; padding:0.7rem; font-size:0.9rem;">✨ 자동 배치 적용</button>
@@ -852,6 +858,7 @@
                         <h1 class="main-title" id="preview-title">모던 웹 디자인의 정석</h1>
                         <p class="sub-title" id="preview-subtitle">HTML/CSS로 만드는 썸네일 생성기</p>
                         <div class="deco-line"></div>
+                        <div class="tags-line" id="preview-tags" style="display: none;"></div>
                     </div>
                 </div>
             </div>
@@ -876,7 +883,7 @@
                     <span class="step-num">1</span>
                     <div class="step-content">
                         <strong>내용 입력 (Text)</strong>
-                        <p>태그, 제목, 부제를 입력하세요. 제목은 Safe Zone을 넘어가면 자동 줄바꿈됩니다.</p>
+                        <p>카테고리, 제목, 부제, 태그를 입력하세요. 제목/부제에서 <b>**단어**</b>처럼 감싸면 형광펜 강조가 되고, 태그는 쉼표로 구분해 적으면 부제 아래에 #해시태그로 표시됩니다.</p>
                     </div>
                 </div>
                 <div class="step-item">
@@ -918,7 +925,22 @@
             if (e.target === this) toggleHelp();
         });
 
-        const inputs = ['series', 'title', 'subtitle', 'width', 'height'];
+        const inputs = ['series', 'title', 'subtitle', 'tags', 'width', 'height'];
+
+        // 제목/부제 마크다운 볼드: **텍스트** -> 형광펜 강조
+        function renderEmphasis(text) {
+            const escaped = text.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+            return escaped.replace(/\*\*([^*]+)\*\*/g, '<span class="hl">$1</span>');
+        }
+
+        // 태그 입력(쉼표/공백 구분) -> "#태그1 #태그2"
+        function formatTags(text) {
+            return text.split(/[,\s]+/)
+                .map(t => t.trim().replace(/^#/, ''))
+                .filter(Boolean)
+                .map(t => '#' + t)
+                .join(' ');
+        }
         const colorInputs = ['color-bg-start', 'color-bg-end', 'color-accent', 'color-text-title', 'color-text-subtitle', 'color-text-series'];
         const metaInputs = [
             'font-family-main', 'font-family-series',
@@ -941,7 +963,13 @@
                 } else {
                     const previewElement = document.getElementById('preview-' + id);
                     if (previewElement) {
-                        previewElement.innerText = value;
+                        if (id === 'title' || id === 'subtitle') {
+                            previewElement.innerHTML = renderEmphasis(value);
+                        } else if (id === 'tags') {
+                            previewElement.textContent = formatTags(value);
+                        } else {
+                            previewElement.innerText = value;
+                        }
                         // Hide element if empty to maintain layout spacing
                         previewElement.style.display = value.trim() === '' ? 'none' : 'block';
                     }
@@ -1162,6 +1190,13 @@
 
         document.getElementById('auto-bg-btn').addEventListener('click', autoBackground);
 
+        // 디자인 테마 선택 시 즉시 적용 (사진 배경은 지워 테마 그라디언트가 보이도록)
+        document.getElementById('ct-theme').addEventListener('change', function () {
+            if (!this.value) return;
+            window.ClickThumb.applyTheme(this.value);
+            window.ClickThumb.applyConfig({ backgroundImage: '' });
+        });
+
         // Aspect Ratio Logic
         const ratioSelect = document.getElementById('aspect-ratio');
         const widthInput = document.getElementById('width');
@@ -1291,7 +1326,7 @@
         window.ClickThumb = {
             // config 키 -> 입력 element ID
             FIELD_MAP: {
-                series: 'series', title: 'title', subtitle: 'subtitle',
+                series: 'series', title: 'title', subtitle: 'subtitle', tags: 'tags',
                 width: 'width', height: 'height',
                 fontFamilyMain: 'font-family-main', fontFamilySeries: 'font-family-series',
                 sizeSeries: 'size-series', sizeTitle: 'size-title', sizeSubtitle: 'size-subtitle',
@@ -1493,8 +1528,6 @@
             const val = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
             const theme = val('ct-theme');
             const handle = val('ct-handle');
-            const badge = val('ct-badge');
-            const kw = val('ct-highlight').split(',').map(s => s.trim()).filter(Boolean);
 
             // 현재 썸네일에 적용된 배경 이미지(data URL) 추출
             const bg = document.getElementById('thumbnail').style.backgroundImage;
@@ -1504,10 +1537,9 @@
                 series: val('series'),
                 title: document.getElementById('title').value,
                 subtitle: document.getElementById('subtitle').value,
+                tags: val('tags'),
                 theme: theme || undefined,
                 handle: handle || undefined,
-                badge: badge || undefined,
-                highlightKeywords: kw,
                 backgroundImage: m ? m[1] : undefined
             });
         }

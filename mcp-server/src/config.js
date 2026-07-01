@@ -5,6 +5,7 @@ export const DEFAULTS = {
   series: 'DEVELOPMENT',
   title: '모던 웹 디자인의 정석',
   subtitle: 'HTML/CSS로 만드는 썸네일 생성기',
+  tags: '',
   fontFamilyMain: "'Pretendard', sans-serif",
   fontFamilySeries: "'Pretendard', sans-serif",
   sizeSeries: 1.4,
