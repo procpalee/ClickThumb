@@ -88,6 +88,32 @@
             color: #8d99ae;
         }
 
+        /* Advanced settings (collapsed by default) */
+        #advanced-settings {
+            border: 1px solid #2a3b55;
+            border-radius: 10px;
+            padding: 0.8rem;
+        }
+
+        #advanced-settings summary {
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #8d99ae;
+            user-select: none;
+        }
+
+        #advanced-settings summary:hover {
+            color: #e0e0e0;
+        }
+
+        #advanced-settings .advanced-body {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
         *,
         *::before,
         *::after {
@@ -162,6 +188,8 @@
             /* Default width */
             height: 450px;
             /* Default height */
+            flex-shrink: 0;
+            /* Keep exact pixel size; adjustScale() handles fitting */
             background: var(--bg-gradient);
             position: relative;
             overflow: hidden;
@@ -567,6 +595,15 @@
             <textarea id="subtitle" placeholder="부제 또는 설명 입력" rows="2">HTML/CSS로 만드는 썸네일 생성기</textarea>
         </div>
 
+        <button id="auto-bg-btn" type="button" style="margin-top:0; background:#13284a; border:1px solid #2a3b55;">🎲 배경 자동 생성</button>
+        <button onclick="downloadThumbnail()" style="margin-top:0;">이미지 다운로드</button>
+        <p id="auto-bg-status" style="display:none; margin:0; font-size:0.75rem; color:#8d99ae;"></p>
+        <p style="margin:0; font-size:0.75rem; color:#8d99ae;">네이버 블로그 규격: 1280×720 (16:9) · 콘텐츠 1:1</p>
+
+        <details id="advanced-settings">
+            <summary>⚙ 고급 설정</summary>
+            <div class="advanced-body">
+
         <!-- AI 자동배치 / 추가 기능 -->
         <div class="input-group"
             style="background:#13284a; padding:1rem; border-radius:10px; border:1px solid #2a3b55;">
@@ -736,6 +773,7 @@
         </div>
 
         <!-- Size & Export Inputs -->
+        <label style="font-size:0.75rem; color:#8d99ae; margin-bottom:-0.8rem;">네이버 기본: 1280×720 (16:9) / 콘텐츠 1:1</label>
         <div class="size-inputs">
             <div class="input-group">
                 <label for="aspect-ratio">배경 비율 (Back<br>ground Ratio)</label>
@@ -787,7 +825,8 @@
             </div>
         </div>
 
-        <button onclick="downloadThumbnail()">이미지 다운로드</button>
+            </div>
+        </details>
     </div>
 
     <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
@@ -843,29 +882,22 @@
                 <div class="step-item">
                     <span class="step-num">2</span>
                     <div class="step-content">
-                        <strong>스타일 커스텀 (Style)</strong>
-                        <p>폰트 종류와 크기, 굵기를 조절하고 텍스트 색상을 변경하여 가독성을 높이세요.</p>
+                        <strong>배경 자동 생성 (Auto Background)</strong>
+                        <p>버튼 한 번으로 배경 사진이 자동 적용되고, 사진 밝기에 맞춰 글자가 잘 보이도록 어둡기가 자동 조절됩니다. 마음에 들 때까지 다시 눌러보세요.</p>
                     </div>
                 </div>
                 <div class="step-item">
                     <span class="step-num">3</span>
                     <div class="step-content">
-                        <strong>배경 꾸미기 (Background)</strong>
-                        <p>그라디언트 색상을 조합하거나 이미지를 업로드할 수 있습니다.</p>
+                        <strong>저장 (Save)</strong>
+                        <p>네이버 블로그에 최적화된 1280×720 (콘텐츠 1:1) WebP로 바로 다운로드됩니다.</p>
                     </div>
                 </div>
                 <div class="step-item">
                     <span class="step-num">4</span>
                     <div class="step-content">
-                        <strong>비율 설정 (Size)</strong>
-                        <p>유튜브(16:9), 인스타(1:1) 등 목적에 맞는 비율을 선택하세요.</p>
-                    </div>
-                </div>
-                <div class="step-item">
-                    <span class="step-num">5</span>
-                    <div class="step-content">
-                        <strong>저장 (Save)</strong>
-                        <p>블로그용은 WebP, 투명 배경은 PNG로 고화질 다운로드 하세요.</p>
+                        <strong>고급 설정 (Advanced)</strong>
+                        <p>폰트·색상·배경 이미지 업로드·비율·포맷 등 세부 조정이 필요하면 "⚙ 고급 설정"을 펼치세요.</p>
                     </div>
                 </div>
             </div>
@@ -1071,6 +1103,64 @@
             // Re-apply gradient from inputs
             updatePreview();
         });
+
+        // Auto Background: random photo (Lorem Picsum) -> data URL, gradient fallback when offline
+        function blobToDataURL(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        const AUTO_GRADIENTS = [
+            ['#4f46e5', '#3b82f6'], // midnight
+            ['#1f2937', '#111827'], // mono
+            ['#f97316', '#dc2626'], // warm
+            ['#047857', '#0f766e'], // forest
+            ['#7c3aed', '#db2777'], // berry
+            ['#0f172a', '#0891b2'], // slate -> cyan
+            ['#b45309', '#e11d48'], // amber -> rose
+            ['#134e4a', '#3b82f6']  // teal -> blue
+        ];
+
+        async function autoBackground() {
+            const btn = document.getElementById('auto-bg-btn');
+            const status = document.getElementById('auto-bg-status');
+            btn.disabled = true;
+            const originalLabel = btn.textContent;
+            btn.textContent = '생성 중…';
+            status.style.display = 'none';
+            try {
+                const w = parseInt(document.getElementById('width').value) || 1280;
+                const h = parseInt(document.getElementById('height').value) || 720;
+                const res = await fetch(`https://picsum.photos/${w}/${h}?random=${Date.now()}`, { mode: 'cors' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const dataUrl = await blobToDataURL(await res.blob());
+                window.ClickThumb.applyConfig({ backgroundImage: dataUrl });
+                try {
+                    const brightness = await window.ClickThumb.analyzeBrightness(dataUrl);
+                    window.ClickThumb.autoOverlay(brightness);
+                } catch (e) {
+                    window.ClickThumb.autoOverlay(0.6);
+                }
+            } catch (e) {
+                const g = AUTO_GRADIENTS[Math.floor(Math.random() * AUTO_GRADIENTS.length)];
+                window.ClickThumb.applyConfig({
+                    backgroundImage: '',
+                    colorBgStart: g[0], colorBgEnd: g[1],
+                    overlayOpacity: 12
+                });
+                status.textContent = '이미지를 불러오지 못해 그라디언트 배경을 적용했습니다.';
+                status.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalLabel;
+            }
+        }
+
+        document.getElementById('auto-bg-btn').addEventListener('click', autoBackground);
 
         // Aspect Ratio Logic
         const ratioSelect = document.getElementById('aspect-ratio');
@@ -1395,6 +1485,8 @@
                 return renderToDataURL({ scale: (config || {}).exportScale, format: (config || {}).exportFormat });
             }
         };
+
+        window.ClickThumb.autoBackground = autoBackground;
 
         // 사람용 "자동 배치 적용" 버튼 핸들러 (현재 입력 + 추가 기능을 smartLayout으로 재배치)
         function runAutoLayout() {
