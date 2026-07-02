@@ -4,28 +4,46 @@ import path from 'node:path';
 import { DEFAULTS, ASPECTS } from './config.js';
 import { imageToDataUrl } from './image.js';
 import { renderConfig } from './browser.js';
+import { getDefaults, getSeries } from './store.js';
 
 const MIME_EXT = { png: 'png', jpeg: 'jpg', webp: 'webp' };
 
-function dataUrlToBuffer(dataUrl) {
+export function dataUrlToBuffer(dataUrl) {
   const m = /^data:([^;]+);base64,(.*)$/s.exec(dataUrl);
   if (!m) throw new Error('렌더 결과가 올바른 data URL이 아닙니다.');
   return { mime: m[1], buffer: Buffer.from(m[2], 'base64') };
 }
 
-/** Merge the simplified smart_thumbnail args into a full config. */
+/** Merge the simplified smart_thumbnail args into a full config.
+ *  Precedence: explicit args > series preset (seriesName) > stored defaults > DEFAULTS. */
 export async function buildSmartConfig(args) {
   const aspect = ASPECTS[args.aspect || '16:9'] || ASPECTS['16:9'];
-  const backgroundImage = await imageToDataUrl({ imagePath: args.imagePath, imageUrl: args.imageUrl });
+  const userDefaults = await getDefaults();
+  const series = args.seriesName ? await getSeries(args.seriesName) : null;
+
+  // 시리즈 프리셋: 명시 이미지가 없으면 지난번에 쓴 배경을 재사용
+  const imagePath = args.imagePath || (args.imageUrl ? undefined : series?.imagePath);
+  const backgroundImage = await imageToDataUrl({ imagePath, imageUrl: args.imageUrl });
+
+  // 로고 워터마크: 명시 인자 > 저장된 기본 로고. 기본 로고 파일이 사라졌으면 조용히 생략.
+  let logo = null;
+  if (args.logoPath || args.logoUrl) {
+    logo = await imageToDataUrl({ imagePath: args.logoPath, imageUrl: args.logoUrl });
+  } else if (userDefaults.logoPath) {
+    try { logo = await imageToDataUrl({ imagePath: userDefaults.logoPath }); } catch { logo = null; }
+  }
+
   return {
     ...DEFAULTS,
     ...aspect,
-    series: args.tag !== undefined ? args.tag : DEFAULTS.series,
+    series: args.tag !== undefined ? args.tag
+      : (series?.tag !== undefined ? series.tag : DEFAULTS.series),
     title: args.title,
     subtitle: args.subtitle !== undefined ? args.subtitle : '',
     tags: args.tags !== undefined ? args.tags : '',
-    theme: args.theme,
-    handle: args.handle,
+    theme: args.theme || series?.theme,
+    handle: args.handle !== undefined ? args.handle : userDefaults.handle,
+    logo,
     badge: args.badge,
     highlightKeywords: args.highlightKeywords || [],
     highlightMode: args.highlightMode || 'marker',
@@ -42,6 +60,12 @@ export async function buildManualConfig(args) {
     cfg.backgroundImage = await imageToDataUrl({
       imagePath: args.config.imagePath,
       imageUrl: args.config.imageUrl
+    });
+  }
+  if (args.config && (args.config.logoPath || args.config.logoUrl)) {
+    cfg.logo = await imageToDataUrl({
+      imagePath: args.config.logoPath,
+      imageUrl: args.config.logoUrl
     });
   }
   if (args.scale) cfg.exportScale = args.scale;

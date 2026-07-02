@@ -573,9 +573,11 @@
         }
 
         .watermark img {
-            height: 1.4em;
+            height: 1.8em;
             width: auto;
             border-radius: 4px;
+            /* 어두운 배경 사진 위에서도 로고가 보이도록 */
+            filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.45));
         }
     </style>
 </head>
@@ -1507,7 +1509,9 @@
 
                 // 부가 요소 (텍스트 확정 이후)
                 this.setBadge(config.badge);
-                this.setWatermark(config.handle ? { text: config.handle } : (config.watermark || null));
+                this.setWatermark((config.handle || config.logo)
+                    ? { text: config.handle, logo: config.logo }
+                    : (config.watermark || null));
                 if (config.highlightKeywords && config.highlightKeywords.length) {
                     this.applyHighlight(config.highlightKeywords, { mode: config.highlightMode || 'marker' });
                 }

@@ -32,12 +32,14 @@ check('autoBackground API exposed', typeof window.ClickThumb.autoBackground === 
 // Do NOT invoke autoBackground here: jsdom has no fetch/canvas.
 
 // Run smart layout (no bg image -> skips brightness/canvas).
+const TINY_PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 await window.ClickThumb.smartLayout({
   series: 'GUIDE',
   title: '스마트 배치 테스트 제목',
   subtitle: '부제 설명입니다',
   theme: 'berry',
   handle: '@procpa',
+  logo: TINY_PNG,
   badge: 'TOP 5',
   highlightKeywords: ['제목'],
   highlightMode: 'marker'
@@ -54,6 +56,7 @@ check('badge text + visible', badge.textContent === 'TOP 5' && badge.style.displ
 
 const wm = doc.getElementById('preview-watermark');
 check('watermark text + visible', wm.textContent.includes('@procpa') && wm.style.display === 'flex');
+check('watermark logo <img> rendered', !!wm.querySelector('img') && wm.querySelector('img').src === TINY_PNG);
 
 // NOTE: updatePreview() syncs text via element.innerText, which jsdom does not
 // implement, so preview-title keeps its default text under jsdom. We therefore

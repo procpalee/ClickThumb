@@ -10,7 +10,7 @@
     "start": "node src/index.js",
     "postinstall": "playwright install chromium",
     "inspect": "npx @modelcontextprotocol/inspector node src/index.js",
-    "test": "node test/dom-logic.test.js",
+    "test": "node test/dom-logic.test.js && node test/store.test.js",
     "test:smoke": "node test/smoke.js"
   },
   "engines": {
