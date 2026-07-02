@@ -1509,9 +1509,10 @@
 
                 // 부가 요소 (텍스트 확정 이후)
                 this.setBadge(config.badge);
-                this.setWatermark((config.handle || config.logo)
-                    ? { text: config.handle, logo: config.logo }
-                    : (config.watermark || null));
+                // 로고가 있으면 로고만, 없으면 핸들 텍스트 (둘 다 필요하면 config.watermark로 직접 지정)
+                this.setWatermark(config.logo ? { logo: config.logo }
+                    : config.handle ? { text: config.handle }
+                        : (config.watermark || null));
                 if (config.highlightKeywords && config.highlightKeywords.length) {
                     this.applyHighlight(config.highlightKeywords, { mode: config.highlightMode || 'marker' });
                 }

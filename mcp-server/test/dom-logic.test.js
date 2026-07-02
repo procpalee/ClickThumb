@@ -55,8 +55,12 @@ const badge = doc.getElementById('preview-badge');
 check('badge text + visible', badge.textContent === 'TOP 5' && badge.style.display === 'block');
 
 const wm = doc.getElementById('preview-watermark');
-check('watermark text + visible', wm.textContent.includes('@procpa') && wm.style.display === 'flex');
-check('watermark logo <img> rendered', !!wm.querySelector('img') && wm.querySelector('img').src === TINY_PNG);
+check('watermark logo <img> rendered', !!wm.querySelector('img') && wm.querySelector('img').src === TINY_PNG && wm.style.display === 'flex');
+check('logo suppresses handle text', !wm.textContent.includes('@procpa'), wm.textContent);
+
+// 로고 없이 핸들만 -> 텍스트 워터마크
+await window.ClickThumb.smartLayout({ title: '텍스트 워터마크', handle: '@procpa' });
+check('handle-only shows text watermark', wm.textContent.includes('@procpa') && !wm.querySelector('img'));
 
 // NOTE: updatePreview() syncs text via element.innerText, which jsdom does not
 // implement, so preview-title keeps its default text under jsdom. We therefore
