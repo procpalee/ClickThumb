@@ -519,14 +519,13 @@
             text-wrap: balance;
         }
 
-        /* 키워드 강조 (형광펜 / 색) */
+        /* 키워드 강조 (밑줄): 흰 글자 유지 + 포인트색 두꺼운 언더라인 */
         .main-title .hl,
         .sub-title .hl {
-            -webkit-text-fill-color: currentColor;
+            -webkit-text-fill-color: #fff;
             color: #fff;
-            background: linear-gradient(transparent 55%, var(--hl-color, #fde047) 55%);
-            padding: 0 0.1em;
-            border-radius: 3px;
+            border-bottom: 0.1em solid var(--hl-color, #fde047);
+            padding-bottom: 0.04em;
             -webkit-box-decoration-break: clone;
             box-decoration-break: clone;
         }
@@ -883,7 +882,7 @@
                     <span class="step-num">1</span>
                     <div class="step-content">
                         <strong>내용 입력 (Text)</strong>
-                        <p>카테고리, 제목, 부제, 태그를 입력하세요. 제목/부제에서 <b>**단어**</b>처럼 감싸면 형광펜 강조가 되고, 태그는 쉼표로 구분해 적으면 부제 아래에 #해시태그로 표시됩니다.</p>
+                        <p>카테고리, 제목, 부제, 태그를 입력하세요. 제목/부제에서 <b>**단어**</b>처럼 감싸면 밑줄 강조가 되고, 태그는 쉼표로 구분해 적으면 부제 아래에 #해시태그로 표시됩니다.</p>
                     </div>
                 </div>
                 <div class="step-item">
@@ -927,7 +926,7 @@
 
         const inputs = ['series', 'title', 'subtitle', 'tags', 'width', 'height'];
 
-        // 제목/부제 마크다운 볼드: **텍스트** -> 형광펜 강조
+        // 제목/부제 마크다운 볼드: **텍스트** -> 밑줄 강조
         function renderEmphasis(text) {
             const escaped = text.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
             return escaped.replace(/\*\*([^*]+)\*\*/g, '<span class="hl">$1</span>');

@@ -51,7 +51,7 @@ export function createServer() {
       handle: z.string().optional().describe('블로그 핸들/워터마크 (예: @procpa)'),
       badge: z.string().optional().describe('숫자 배지 (예: TOP 5)'),
       highlightKeywords: z.array(z.string()).optional().describe('제목/부제에서 강조할 키워드 목록'),
-      highlightMode: z.enum(['marker', 'color']).optional().describe('강조 방식 (marker=형광펜, color=색). 기본 marker'),
+      highlightMode: z.enum(['marker', 'color']).optional().describe('강조 방식 (marker=밑줄, color=글자색). 기본 marker'),
       outputPath: z.string().describe('저장할 파일 경로 (확장자는 format에 맞게 자동 보정)'),
       scale: scaleEnum.optional().describe('출력 배율 1/2/4 (기본 2)'),
       format: formatEnum.optional().describe('출력 포맷 png/jpeg/webp (기본 webp)')
